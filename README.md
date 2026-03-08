@@ -9,26 +9,26 @@ main. The entire pipeline runs in under 3 minutes with zero manual steps.
 cicd-pipeline-aws/
 ├── app/
 │   ├── backend/
-│   │   ├── app.py              # Flask REST API
+│   │   ├── app.py              
 │   │   ├── requirements.txt
-│   │   └── Dockerfile          # Multi-stage, non-root user
+│   │   └── Dockerfile          
 │   └── frontend/
 │       └── index.html
 ├── tests/
-│   └── test_app.py             # 10 unit tests (pytest)
+│   └── test_app.py            
 ├── terraform/
-│   ├── main.tf                 # Root module + GitHub OIDC IAM role
+│   ├── main.tf                
 │   ├── variables.tf
 │   ├── outputs.tf
 │   └── modules/
-│       ├── networking/         # VPC, subnets, route tables
-│       ├── ecr/                # ECR repo + lifecycle policy
-│       ├── alb/                # ALB, target group, listener
-│       └── ecs/                # Cluster, task def, service, IAM
+│       ├── networking/         
+│       ├── ecr/                
+│       ├── alb/               
+│       └── ecs/                
 └── .github/
     └── workflows/
-        ├── ci.yml              # Lint → Test → Docker check
-        └── cd.yml              # Build → ECR → ECS deploy
+        ├── ci.yml              
+        └── cd.yml              
 ```
 
 Deploy
@@ -55,3 +55,4 @@ GitHub Secrets Required
 | `ECS_TASK_DEFINITION` | ECS task definition family |
 | `ECS_CONTAINER_NAME` | Container name (flask-api) |
 | `ALB_DNS_NAME` | Load balancer DNS name |
+
