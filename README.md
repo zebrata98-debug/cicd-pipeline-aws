@@ -1,69 +1,10 @@
-# cicd-pipeline-aws
+cicd-pipeline-aws
 
 A production-grade CI/CD pipeline that automatically lints, tests, builds, 
 and deploys a containerised Flask API to AWS ECS Fargate on every push to 
-`main`. The entire pipeline runs in under 3 minutes with zero manual steps.
+main. The entire pipeline runs in under 3 minutes with zero manual steps.
 
-## How It Works
-
-Every time you push code to `main`, this happens automatically:
-```
-git push → GitHub Actions triggers
-              │
-              ├── CI Pipeline
-              │     ├── 1. Lint (flake8)
-              │     ├── 2. Unit Tests (pytest)
-              │     └── 3. Docker Build Check
-              │
-              └── CD Pipeline (only if CI passes)
-                    ├── 4. Build Docker image
-                    ├── 5. Push to Amazon ECR
-                    ├── 6. Update ECS task definition
-                    ├── 7. Rolling deploy to ECS
-                    └── 8. Health check verify
-```
-
-If any step fails, the pipeline stops and the old version keeps running.
-
-## Architecture
-```
-Developer
-    │
-    │  git push origin main
-    ▼
-GitHub Actions
-    │
-    ├── CI  →  Lint → Test → Docker Check
-    │
-    └── CD  →  Build → ECR Push → ECS Deploy
-                                       │
-                          ┌────────────▼────────────┐
-                          │  Application Load        │
-                          │  Balancer (public)       │
-                          └────────┬────────┬────────┘
-                                   │        │
-                          ┌────────▼──┐  ┌──▼────────┐
-                          │ ECS Task  │  │ ECS Task  │
-                          │ (AZ-a)    │  │ (AZ-b)    │
-                          │ Flask API │  │ Flask API │
-                          └───────────┘  └───────────┘
-```
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| App | Python Flask + Gunicorn | REST API with /health and /api/items |
-| Container | Docker (multi-stage build) | Non-root user, minimal image |
-| Registry | Amazon ECR | Private Docker image storage |
-| Compute | ECS Fargate | Serverless containers, no EC2 to manage |
-| Load Balancer | AWS ALB | Routes traffic, health checks |
-| CI/CD | GitHub Actions | Automated pipeline on every push |
-| Auth | AWS OIDC | No long-lived access keys stored |
-| IaC | Terraform (modules) | All AWS resources as code |
-| Observability | CloudWatch Logs | Structured logs from every container |
-
-## Project Structure
+ Project Structure
 ```
 cicd-pipeline-aws/
 ├── app/
@@ -90,31 +31,19 @@ cicd-pipeline-aws/
         └── cd.yml              # Build → ECR → ECS deploy
 ```
 
-## API Endpoints
+Deploy
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | /health | Health check |
-| GET | /api/items | List all items |
-| GET | /api/items/:id | Get single item |
-
-## How to Deploy
-
-You need Terraform, AWS CLI, and a GitHub repo.
-```bash
-# 1. Deploy infrastructure (~5 minutes)
 cd terraform
+
 terraform init
+
 terraform apply -var="github_repo=YOUR_USERNAME/cicd-pipeline-aws"
 
-# 2. Add GitHub Secrets from terraform output
 terraform output next_steps
 
-# 3. Push code - pipeline triggers automatically
 git push origin main
-```
 
-## GitHub Secrets Required
+GitHub Secrets Required
 
 | Secret | Description |
 |---|---|
@@ -126,34 +55,3 @@ git push origin main
 | `ECS_TASK_DEFINITION` | ECS task definition family |
 | `ECS_CONTAINER_NAME` | Container name (flask-api) |
 | `ALB_DNS_NAME` | Load balancer DNS name |
-
-## Security Highlights
-
-**No long-lived AWS keys** — GitHub Actions authenticates via OIDC. 
-GitHub proves its identity to AWS using short-lived tokens. No secrets 
-to rotate, no keys to leak.
-
-**Non-root Docker user** — The container runs as `appuser`, not root.
-
-**Private subnets** — ECS tasks only reachable through the ALB.
-
-**Minimal IAM permissions** — GitHub Actions role only has ECR push 
-and ECS deploy permissions.
-
-## Cleanup
-```bash
-cd terraform
-terraform destroy -var="github_repo=YOUR_USERNAME/cicd-pipeline-aws"
-```
-
-## What I Learned
-
-- How GitHub Actions CI/CD pipelines work end to end
-- How OIDC authentication replaces long-lived AWS access keys
-- How ECS Fargate runs containers without managing EC2 instances
-- How rolling deploys work — new tasks start, health checks pass, old tasks stop
-- How Git SHA image tagging lets you trace exactly which code is running
-- How Terraform modules keep infrastructure code organised and reusable
-- How flake8 and pytest integrate into automated pipelines
-- How ALB health checks gate deployments — bad code never goes live
-```
